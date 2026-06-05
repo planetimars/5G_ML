@@ -1,0 +1,57 @@
+"""Utilities for discovering and comparing saved experiment runs."""
+
+from pathlib import Path
+
+import pandas as pd
+
+
+def discover_run_directories(reports_dir):
+    """Return a sorted list of run directories under artifacts/reports."""
+    base = Path(reports_dir)
+    if not base.exists():
+        return []
+
+    run_dirs = [p for p in base.iterdir() if p.is_dir() and p.name.startswith("run_")]
+    run_dirs.sort(key=lambda p: p.name, reverse=True)
+    return run_dirs
+
+
+def load_run_table(run_dir, table_name):
+    """Load a table CSV from a run's tables directory if present."""
+    table_path = Path(run_dir) / "tables" / f"{table_name}.csv"
+    if not table_path.exists():
+        return None
+
+    try:
+        return pd.read_csv(table_path)
+    except Exception:
+        return None
+
+
+def infer_primary_metric(leaderboard_df):
+    """Infer the main comparison metric from leaderboard columns."""
+    if leaderboard_df is None or leaderboard_df.empty:
+        return None
+
+    for col in ["R2", "F1", "Accuracy", "CVMean"]:
+        if col in leaderboard_df.columns:
+            return col
+    return None
+
+
+def best_model_by_metric(leaderboard_df, metric_col):
+    """Return best model row using a metric column."""
+    if leaderboard_df is None or leaderboard_df.empty or metric_col not in leaderboard_df.columns:
+        return None
+
+    df = leaderboard_df.copy().dropna(subset=[metric_col])
+    if df.empty:
+        return None
+
+    best_idx = df[metric_col].idxmax()
+    row = df.loc[best_idx]
+    return {
+        "Model": row.get("Model", "Unknown"),
+        "Metric": metric_col,
+        "Score": float(row[metric_col]),
+    }
