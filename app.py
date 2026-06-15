@@ -689,9 +689,20 @@ with ml_lab_tab:
     # QoS class columns can appear either as text labels (Good/Poor) or small numeric codes.
     target_name = str(target_col).lower()
     target_series = dataset[target_col]
-    is_text_target = target_series.dtype == "object" or str(target_series.dtype).startswith("category")
+    # Pandas extension dtypes, such as string[python] / string[pyarrow], cannot be
+    # passed safely to numpy.issubdtype. Use pandas dtype helpers instead.
+    is_text_target = (
+        pd.api.types.is_object_dtype(target_series)
+        or pd.api.types.is_string_dtype(target_series)
+        or pd.api.types.is_categorical_dtype(target_series)
+    )
     is_qos_like_target = any(token in target_name for token in ["qos", "class", "category", "label", "quality"])
-    is_small_discrete_target = target_series.nunique(dropna=True) <= 10 and not np.issubdtype(target_series.dtype, np.floating)
+    is_numeric_target = pd.api.types.is_numeric_dtype(target_series)
+    is_float_target = pd.api.types.is_float_dtype(target_series)
+    is_small_discrete_target = (
+        target_series.nunique(dropna=True) <= 10
+        and (not is_numeric_target or not is_float_target)
+    )
     task_type = "classification" if (is_text_target or is_qos_like_target or is_small_discrete_target) else "regression"
 
     st.info(f"Detected task type: {task_type.title()}")
