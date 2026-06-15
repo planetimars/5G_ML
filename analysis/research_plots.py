@@ -39,10 +39,23 @@ def regression_diagnostics(y_true, y_pred):
 
 
 def classification_diagnostics(y_true, y_pred, class_labels, display_labels=None):
+    """Create classification diagnostic plots with index-safe comparisons.
+
+    Streamlit/Scikit-learn can pass y_true and y_pred with different Pandas
+    indexes after train/test splitting. If a boolean mask from y_true is applied
+    directly to y_pred, Pandas raises an ``Unalignable boolean Series`` error.
+    Resetting both arrays to positional indexes keeps the comparison valid.
+    """
     if display_labels is None:
         display_labels = class_labels
 
-    cm = confusion_matrix(y_true, y_pred, labels=class_labels)
+    class_labels = list(class_labels)
+    display_labels = list(display_labels)
+
+    y_true_series = pd.Series(y_true).reset_index(drop=True)
+    y_pred_series = pd.Series(y_pred).reset_index(drop=True)
+
+    cm = confusion_matrix(y_true_series, y_pred_series, labels=class_labels)
     cm_df = pd.DataFrame(cm, index=display_labels, columns=display_labels)
 
     fig_confusion = px.imshow(
@@ -52,15 +65,13 @@ def classification_diagnostics(y_true, y_pred, class_labels, display_labels=None
         color_continuous_scale="Blues",
     )
 
-    y_true_series = pd.Series(y_true)
-    y_pred_series = pd.Series(y_pred)
     class_accuracy = []
     for label_value, label_name in zip(class_labels, display_labels):
-        mask = y_true_series == label_value
+        mask = (y_true_series == label_value).to_numpy()
         if mask.sum() == 0:
             score = np.nan
         else:
-            score = (y_pred_series[mask] == label_value).mean()
+            score = (y_pred_series.to_numpy()[mask] == label_value).mean()
         class_accuracy.append({"Class": label_name, "ClassAccuracy": score})
 
     class_acc_df = pd.DataFrame(class_accuracy)
