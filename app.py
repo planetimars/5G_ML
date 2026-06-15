@@ -760,7 +760,11 @@ with ml_lab_tab:
         st.warning("SHAP package not available. Install dependencies from requirements.txt.")
         generate_shap = False
 
-    if st.button("Train and Compare Models", key="train_compare"):
+    train_compare_clicked = st.button("Train and Compare Models", key="train_compare")
+    if train_compare_clicked:
+        st.session_state["ml_lab_results_visible"] = True
+
+    if st.session_state.get("ml_lab_results_visible", False):
         render_step_label("Step 3 - Train and Evaluate")
         train_df = dataset[selected_features + [target_col]].dropna().copy()
         x = train_df[selected_features]
@@ -942,7 +946,7 @@ with ml_lab_tab:
                 "Select model to inspect",
                 options=available_model_names,
                 index=0,
-                key="selected_model_graph",
+                key=f"selected_model_graph_{task_type}_{target_col}",
             )
             render_individual_model_graphs(
                 task_type=task_type,
