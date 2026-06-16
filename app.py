@@ -307,10 +307,22 @@ def render_individual_model_graphs(task_type, model_name, y_true, y_pred, class_
         model_diag = regression_diagnostics(y_true, y_pred)
         model_col1, model_col2 = st.columns(2)
         with model_col1:
-            st.plotly_chart(apply_plot_theme(model_diag["scatter"]), use_container_width=True)
-            st.plotly_chart(apply_plot_theme(model_diag["residual_vs_pred"]), use_container_width=True)
+            st.plotly_chart(
+                apply_plot_theme(model_diag["scatter"]),
+                use_container_width=True,
+                key=f"individual_{task_type}_{model_name}_scatter"
+            )
+            st.plotly_chart(
+                apply_plot_theme(model_diag["residual_vs_pred"]),
+                use_container_width=True,
+                key=f"individual_{task_type}_{model_name}_residual_vs_pred"
+            )
         with model_col2:
-            st.plotly_chart(apply_plot_theme(model_diag["residual_hist"]), use_container_width=True)
+            st.plotly_chart(
+                apply_plot_theme(model_diag["residual_hist"]),
+                use_container_width=True,
+                key=f"individual_{task_type}_{model_name}_residual_hist"
+            )
             model_abs = np.abs(model_diag["table"]["Residual"])
             model_quant = model_abs.quantile([0.5, 0.75, 0.9, 0.95]).reset_index()
             model_quant.columns = ["Quantile", "AbsoluteResidual"]
@@ -320,9 +332,17 @@ def render_individual_model_graphs(task_type, model_name, y_true, y_pred, class_
         cls_diag = classification_diagnostics(y_true, y_pred, class_labels=class_labels, display_labels=class_names)
         model_col1, model_col2 = st.columns(2)
         with model_col1:
-            st.plotly_chart(apply_plot_theme(cls_diag["confusion"]), use_container_width=True)
+            st.plotly_chart(
+                apply_plot_theme(cls_diag["confusion"]),
+                use_container_width=True,
+                key=f"individual_{task_type}_{model_name}_confusion"
+            )
         with model_col2:
-            st.plotly_chart(apply_plot_theme(cls_diag["class_accuracy"]), use_container_width=True)
+            st.plotly_chart(
+                apply_plot_theme(cls_diag["class_accuracy"]),
+                use_container_width=True,
+                key=f"individual_{task_type}_{model_name}_class_accuracy"
+            )
         render_graph_interpretation_notes("diagnostics")
 
 
@@ -1033,11 +1053,23 @@ with ml_lab_tab:
             with diag_col1:
                 reg_diag["scatter"] = apply_plot_theme(reg_diag["scatter"])
                 reg_diag["residual_vs_pred"] = apply_plot_theme(reg_diag["residual_vs_pred"])
-                st.plotly_chart(reg_diag["scatter"], use_container_width=True)
-                st.plotly_chart(reg_diag["residual_vs_pred"], use_container_width=True)
+                st.plotly_chart(
+                    reg_diag["scatter"],
+                    use_container_width=True,
+                    key=f"best_{task_type}_{target_col}_scatter"
+                )
+                st.plotly_chart(
+                    reg_diag["residual_vs_pred"],
+                    use_container_width=True,
+                    key=f"best_{task_type}_{target_col}_residual_vs_pred"
+                )
             with diag_col2:
                 reg_diag["residual_hist"] = apply_plot_theme(reg_diag["residual_hist"])
-                st.plotly_chart(reg_diag["residual_hist"], use_container_width=True)
+                st.plotly_chart(
+                    reg_diag["residual_hist"],
+                    use_container_width=True,
+                    key=f"best_{task_type}_{target_col}_residual_hist"
+                )
                 error_quantiles = reg_diag["table"]["Residual"].abs().quantile([0.5, 0.75, 0.9, 0.95]).reset_index()
                 error_quantiles.columns = ["Quantile", "AbsoluteResidual"]
                 st.dataframe(error_quantiles, use_container_width=True)
@@ -1063,10 +1095,18 @@ with ml_lab_tab:
             cls_col1, cls_col2 = st.columns(2)
             with cls_col1:
                 cls_diag["confusion"] = apply_plot_theme(cls_diag["confusion"])
-                st.plotly_chart(cls_diag["confusion"], use_container_width=True)
+                st.plotly_chart(
+                    cls_diag["confusion"],
+                    use_container_width=True,
+                    key=f"best_{task_type}_{target_col}_confusion"
+                )
             with cls_col2:
                 cls_diag["class_accuracy"] = apply_plot_theme(cls_diag["class_accuracy"])
-                st.plotly_chart(cls_diag["class_accuracy"], use_container_width=True)
+                st.plotly_chart(
+                    cls_diag["class_accuracy"],
+                    use_container_width=True,
+                    key=f"best_{task_type}_{target_col}_class_accuracy"
+                )
             render_graph_interpretation_notes("diagnostics")
 
             roc_auc_df = multiclass_roc_auc(best_model, x_test, y_test)
